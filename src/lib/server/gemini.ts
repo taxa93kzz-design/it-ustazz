@@ -39,3 +39,22 @@ export async function generateStructured<T>(
     throw new GeminiGenerationError("Gemini қызметіне сұрау жіберу сәтсіз аяқталды");
   }
 }
+
+export async function generateText(prompt: string): Promise<string> {
+  try {
+    const response = await getClient().models.generateContent({
+      model: MODEL,
+      contents: prompt,
+      config: {
+        temperature: 0.35,
+        maxOutputTokens: 900,
+      },
+    });
+    const text = response.text?.trim();
+    if (!text) throw new GeminiGenerationError("AI бос жауап қайтарды");
+    return text;
+  } catch (error) {
+    if (error instanceof GeminiConfigurationError || error instanceof GeminiGenerationError) throw error;
+    throw new GeminiGenerationError("Gemini қызметіне сұрау жіберу сәтсіз аяқталды");
+  }
+}

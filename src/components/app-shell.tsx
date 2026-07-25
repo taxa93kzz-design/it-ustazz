@@ -20,6 +20,7 @@ import {
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { CurrentProfile } from "@/lib/auth";
+import { ChatBot } from "@/components/chat/ChatBot";
 
 const links = [
   { href: "/", label: "Басты бет", icon: Home },
@@ -111,6 +112,7 @@ export function AppShell({ children, profile }: { children: React.ReactNode; pro
         </header>
         <main className="mx-auto max-w-7xl p-4 sm:p-7 lg:p-10">{children}</main>
       </div>
+      {profile && <ChatBot userName={profile.full_name} />}
     </div>
   );
 }
