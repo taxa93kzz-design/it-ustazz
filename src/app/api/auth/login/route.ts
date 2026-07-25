@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { loginSchema } from "@/lib/auth-schemas";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, isSupabaseAdminConfigured } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { checkLoginRateLimit, clearLoginAttempts } from "@/lib/rate-limit";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { getSupabasePublicConfigIssue, isSupabaseConfigured } from "@/lib/supabase/config";
 
 export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({
-      message: "Supabase сервері бапталмаған. .env.local файлына қажетті үш айнымалыны енгізіңіз.",
+      message: `Supabase сервері бапталмаған. ${getSupabasePublicConfigIssue()}`,
     }, { status: 503 });
   }
   try {
@@ -23,8 +23,8 @@ export async function POST(request: Request) {
 
     let email = parsed.data.identifier;
     if (!email.includes("@")) {
-      if (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SECRET_KEY) {
-        return NextResponse.json({ message: "Логинмен кіру үшін серверлік Supabase secret key бапталмаған. Email қолданыңыз." }, { status: 503 });
+      if (!isSupabaseAdminConfigured()) {
+        return NextResponse.json({ message: "Жетіспейтін environment variable: SUPABASE_SECRET_KEY. Email қолданыңыз." }, { status: 503 });
       }
       const admin = createAdminClient();
       const { data } = await admin.from("profiles").select("email,is_active").eq("username", email.toLowerCase()).maybeSingle();
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       await supabase.auth.signOut();
       return NextResponse.json({ message: "Бұл аккаунт бұғатталған" }, { status: 403 });
     }
-    if (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY) {
+    if (isSupabaseAdminConfigured()) {
       await createAdminClient().from("profiles").update({ last_login_at: new Date().toISOString() }).eq("id", data.user.id);
     }
     clearLoginAttempts(key);

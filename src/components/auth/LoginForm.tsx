@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-export function LoginForm({ configured = true }: { configured?: boolean }) {
+export function LoginForm({ configured = true, missingVariables = [], configIssue }: {
+  configured?: boolean; missingVariables?: string[]; configIssue?: string | null;
+}) {
   const router = useRouter();
   const params = useSearchParams();
   const [identifier, setIdentifier] = useState("");
@@ -14,7 +16,11 @@ export function LoginForm({ configured = true }: { configured?: boolean }) {
   const [remember, setRemember] = useState(false);
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(!configured || params.get("error") === "config" ? "Supabase сервері бапталмаған. Әкімші .env.local файлына қосылу деректерін енгізуі керек." : "");
+  const missingFromUrl = params.get("missing")?.split(",").filter(Boolean) ?? [];
+  const missing = missingVariables.length ? missingVariables : missingFromUrl;
+  const [error, setError] = useState(!configured || params.get("error") === "config"
+    ? `Supabase сервері бапталмаған. ${configIssue ?? `Жетіспейтін айнымалы: ${missing.join(", ") || "Supabase environment variables"}`}`
+    : "");
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!configured) return;

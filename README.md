@@ -56,9 +56,8 @@ npm run dev
    `supabase/migrations/001_auth_and_profiles.sql` файлын орындаңыз.
 2. `.env.example` файлын `.env.local` ретінде көшіріңіз. Жаңа Supabase
    жобасында `NEXT_PUBLIC_SUPABASE_URL`,
-   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` және `SUPABASE_SECRET_KEY`
-   мәндерін толтырыңыз. Legacy жоба үшін `ANON_KEY` және
-   `SERVICE_ROLE_KEY` баламалары қолдау табады.
+   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` және
+   `NEXT_PUBLIC_SITE_URL` мәндерін толтырыңыз.
 3. Supabase Authentication → URL Configuration ішінде жергілікті
    `http://localhost:3000/auth/callback` және production доменінің дәл сондай
    redirect URL мекенжайын рұқсат етілген тізімге қосыңыз.
@@ -86,8 +85,8 @@ where id = 'AUTH_USER_UUID';
 4. Project Settings → Environment Variables ішінде Supabase URL,
    publishable key, server secret key және қажет болса `GEMINI_API_KEY`
    мәндерін Production, Preview және Development орталарына қосыңыз.
-5. `SUPABASE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY` және
-   `GEMINI_API_KEY` атауларына `NEXT_PUBLIC_` префиксін бермеңіз.
+5. `SUPABASE_SECRET_KEY` және `GEMINI_API_KEY` атауларына
+   `NEXT_PUBLIC_` префиксін бермеңіз.
 6. Supabase Authentication → URL Configuration ішінде Vercel production
    доменін **Site URL** ретінде және
    `https://сіздің-доменіңіз/auth/callback` мекенжайын Redirect URLs тізіміне
@@ -117,6 +116,6 @@ Next.js, TypeScript, App Router, Tailwind CSS, shadcn/ui үлгісіндегі 
 ## Қауіпсіздік
 
 `.env`, `.env.local` және `.env.production` файлдарын GitHub-қа қоспаңыз.
-Publishable key браузерге арналған, ал Supabase secret/service-role және Gemini
+Publishable key браузерге арналған, ал Supabase secret key және Gemini
 кілттері тек серверлік environment variables ішінде сақталуы тиіс. Кілт
 кездейсоқ репозиторийге түссе, оны дереу revoke/rotate етіңіз.

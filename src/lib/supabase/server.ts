@@ -4,8 +4,8 @@ import { getSupabasePublicConfig } from "./config";
 
 export async function createClient(remember = true) {
   const cookieStore = await cookies();
-  const { url, anonKey } = getSupabasePublicConfig();
-  return createServerClient(url, anonKey, {
+  const { url, publishableKey } = getSupabasePublicConfig();
+  return createServerClient(url, publishableKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (items) => {
