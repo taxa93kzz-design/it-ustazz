@@ -33,6 +33,11 @@ button {
 }
 
 @media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
   aside,
   header,
   .no-print {
@@ -47,5 +52,21 @@ button {
 
   body {
     background: white;
+  }
+
+  .worksheet-landscape {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .worksheet-landscape > div {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .worksheet-landscape textarea {
+    min-height: 150mm !important;
+    resize: none !important;
   }
 }

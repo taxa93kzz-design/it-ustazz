@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 interface UserRow {
   id: string; email: string; username: string; full_name: string; school_name: string;
   role: "admin" | "teacher"; is_active: boolean; created_at: string; last_login_at: string | null;
+  subscription_status: "trial" | "active" | "expired"; trial_generations_used: number; subscription_expires_at: string | null;
 }
 
 const emptyForm = { fullName: "", username: "", email: "", schoolName: "", role: "teacher", password: "" };
@@ -36,10 +37,10 @@ export function UsersManager() {
       <label className="grid gap-1 text-sm">Рөл<select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="h-11 rounded-xl border px-3"><option value="teacher">Мұғалім</option><option value="admin">Әкімші</option></select></label>
       <p className="text-xs text-slate-500 md:col-span-2">Пароль кемінде 10 таңба: бас әріп, кіші әріп және сан.</p><Button className="md:col-span-2">Қолданушыны ашу</Button>
     </form></Card>}
-    {loading ? <p>Жүктелуде...</p> : <div className="overflow-x-auto rounded-2xl border bg-white"><table className="w-full min-w-[950px] text-left text-sm"><thead className="bg-slate-50"><tr>{["Аты-жөні", "Логин", "Email", "Мектебі", "Рөлі", "Күйі", "Тіркелген", "Соңғы кіру", "Әрекет"].map((h) => <th key={h} className="p-3">{h}</th>)}</tr></thead><tbody>{users.map((user) => <tr key={user.id} className="border-t">
+    {loading ? <p>Жүктелуде...</p> : <div className="overflow-x-auto rounded-2xl border bg-white"><table className="w-full min-w-[1100px] text-left text-sm"><thead className="bg-slate-50"><tr>{["Аты-жөні", "Логин", "Email", "Мектебі", "Рөлі", "Күйі", "AI қолжетімділігі", "Тіркелген", "Соңғы кіру", "Әрекет"].map((h) => <th key={h} className="p-3">{h}</th>)}</tr></thead><tbody>{users.map((user) => <tr key={user.id} className="border-t">
       <td className="p-3 font-medium">{user.full_name}</td><td className="p-3">{user.username}</td><td className="p-3">{user.email}</td><td className="p-3">{user.school_name}</td>
       <td className="p-3"><select value={user.role} onChange={async (e) => { try { await mutate(`/api/admin/users/${user.id}`, { method: "PATCH", body: JSON.stringify({ role: e.target.value }) }); await load(); } catch (x) { setMessage(x instanceof Error ? x.message : "Қате"); } }} className="rounded-lg border p-1"><option value="teacher">Мұғалім</option><option value="admin">Әкімші</option></select></td>
-      <td className="p-3">{user.is_active ? "Белсенді" : "Бұғатталған"}</td><td className="p-3">{new Date(user.created_at).toLocaleDateString("kk-KZ")}</td><td className="p-3">{user.last_login_at ? new Date(user.last_login_at).toLocaleString("kk-KZ") : "—"}</td>
+      <td className="p-3">{user.is_active ? "Белсенді" : "Бұғатталған"}</td><td className="p-3">{user.role === "admin" ? "Шектеусіз" : user.subscription_status === "active" ? `Жазылым (${user.subscription_expires_at ? new Date(user.subscription_expires_at).toLocaleDateString("kk-KZ") : "—"})` : `Пробный: ${Math.max(0, 2 - user.trial_generations_used)}/2`}</td><td className="p-3">{new Date(user.created_at).toLocaleDateString("kk-KZ")}</td><td className="p-3">{user.last_login_at ? new Date(user.last_login_at).toLocaleString("kk-KZ") : "—"}</td>
       <td className="p-3"><div className="flex flex-wrap gap-1">
         <Button size="sm" variant="outline" onClick={async () => {
           const fullName = prompt("Толық аты-жөні", user.full_name); if (fullName === null) return;
@@ -50,6 +51,8 @@ export function UsersManager() {
         }}>Өзгерту</Button>
         <Button size="sm" variant="outline" onClick={async () => { await mutate(`/api/admin/users/${user.id}`, { method: "PATCH", body: JSON.stringify({ isActive: !user.is_active }) }); await load(); }}>{user.is_active ? "Бұғаттау" : "Белсендіру"}</Button>
         <Button size="sm" variant="outline" onClick={async () => { const d = await mutate(`/api/admin/users/${user.id}/reset-password`, { method: "POST" }); setMessage(d.message); }}>Парольді қалпына келтіру</Button>
+        {user.role === "teacher" && <Button size="sm" onClick={async () => { await mutate(`/api/admin/users/${user.id}`, { method: "PATCH", body: JSON.stringify({ subscriptionAction: "activate" }) }); setMessage("Жазылым 30 күнге қосылды"); await load(); }}>Жазылымды қосу</Button>}
+        {user.role === "teacher" && <Button size="sm" variant="outline" onClick={async () => { await mutate(`/api/admin/users/${user.id}`, { method: "PATCH", body: JSON.stringify({ subscriptionAction: "reset_trial" }) }); setMessage("2 тегін мүмкіндік қайта берілді"); await load(); }}>Пробныйды жаңарту</Button>}
         <Button size="sm" variant="danger" onClick={async () => { if (!confirm(`${user.full_name} аккаунтын біржола жою керек пе?`)) return; await mutate(`/api/admin/users/${user.id}`, { method: "DELETE" }); await load(); }}>Жою</Button>
       </div></td>
     </tr>)}</tbody></table></div>}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { GeminiConfigurationError, GeminiGenerationError } from "./gemini";
+import { SubscriptionConfigurationError } from "@/lib/subscription";
 
 export function aiApiError(error: unknown) {
   if (error instanceof z.ZodError) {
@@ -14,6 +15,9 @@ export function aiApiError(error: unknown) {
   }
   if (error instanceof GeminiGenerationError) {
     return NextResponse.json({ error: error.message, code: "AI_GENERATION_FAILED" }, { status: 502 });
+  }
+  if (error instanceof SubscriptionConfigurationError) {
+    return NextResponse.json({ error: error.message, code: "SUBSCRIPTION_NOT_CONFIGURED" }, { status: 503 });
   }
   return NextResponse.json({ error: "Серверде күтпеген қате шықты" }, { status: 500 });
 }

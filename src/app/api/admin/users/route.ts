@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function GET() {
   if (!await requireAdmin()) return NextResponse.json({ message: "Рұқсат жоқ" }, { status: 403 });
   const admin = createAdminClient();
-  const { data, error } = await admin.from("profiles").select("id,email,username,full_name,school_name,role,is_active,created_at,last_login_at").order("created_at", { ascending: false });
+  const { data, error } = await admin.from("profiles").select("id,email,username,full_name,school_name,role,is_active,created_at,last_login_at,subscription_status,trial_generations_used,subscription_expires_at").order("created_at", { ascending: false });
   if (error) return NextResponse.json({ message: "Қолданушылар жүктелмеді" }, { status: 500 });
   return NextResponse.json({ users: data });
 }

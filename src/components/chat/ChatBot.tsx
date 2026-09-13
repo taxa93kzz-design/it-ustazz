@@ -4,6 +4,7 @@ import { Bot, Loader2, MessageCircle, RotateCcw, Send, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "@/lib/chat-schema";
 import { Button } from "@/components/ui/button";
+import { WHATSAPP_URL } from "@/constants/subscription";
 
 const welcome: ChatMessage = {
   role: "assistant",
@@ -22,6 +23,7 @@ export function ChatBot({ userName }: { userName: string }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [paymentRequired, setPaymentRequired] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export function ChatBot({ userName }: { userName: string }) {
     setMessages((items) => [...items, { role: "user", content: message }]);
     setInput("");
     setError("");
+    setPaymentRequired(false);
     setLoading(true);
     try {
       const response = await fetch("/api/chat", {
@@ -42,8 +45,14 @@ export function ChatBot({ userName }: { userName: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, history }),
       });
-      const data = await response.json() as { answer?: string; message?: string };
+      const data = await response.json() as { answer?: string; message?: string; code?: string };
+      if (data.code === "SUBSCRIPTION_REQUIRED") {
+        setPaymentRequired(true);
+        window.dispatchEvent(new CustomEvent("subscription-required", { detail: data }));
+      }
       if (!response.ok || !data.answer) throw new Error(data.message ?? "Жауап алынбады");
+      const remaining = response.headers.get("X-AI-Remaining");
+      if (remaining !== null) window.dispatchEvent(new CustomEvent("ai-usage-updated", { detail: { remaining: Number(remaining) } }));
       setMessages((items) => [...items, { role: "assistant", content: data.answer! }]);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Чат қызметімен байланысу мүмкін болмады");
@@ -87,7 +96,7 @@ export function ChatBot({ userName }: { userName: string }) {
               <button key={suggestion} onClick={() => void send(suggestion)} className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-left text-xs text-blue-700 hover:bg-blue-50">{suggestion}</button>,
             )}</div>}
             {loading && <div className="mr-8 flex"><p className="flex items-center gap-2 rounded-2xl rounded-bl-md border bg-white px-3.5 py-2.5 text-sm text-slate-500"><Loader2 className="size-4 animate-spin" /> Жауап дайындалуда...</p></div>}
-            {error && <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700"><p>{error}</p><button onClick={retry} className="mt-2 flex items-center gap-1 font-semibold"><RotateCcw className="size-4" /> Қайта сұрау</button></div>}
+            {error && <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700"><p>{error}</p>{paymentRequired ? <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex font-bold text-green-700">WhatsApp арқылы жазылу</a> : <button onClick={retry} className="mt-2 flex items-center gap-1 font-semibold"><RotateCcw className="size-4" /> Қайта сұрау</button>}</div>}
             <div ref={endRef} />
           </div>
 

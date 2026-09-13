@@ -1,10 +1,52 @@
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
+import { AlignmentType, Document, HeadingLevel, Packer, PageOrientation, Paragraph, Table, TableCell, TableRow, TextRun, VerticalAlign, WidthType } from "docx";
 import type { LessonStage, Material, TaskItem, TestQuestion } from "@/types/material";
 import type { LessonPlan } from "@/types/lesson-plan";
 import { exportLessonPlanDocx } from "@/lib/lesson-plan-docx";
 
 const cell = (text: string, bold = false) =>
   new TableCell({ children: [new Paragraph({ children: [new TextRun({ text, bold, font: "Times New Roman" })] })] });
+
+const worksheetParagraphs = (text: string) => text.split("\n").map((line) => new Paragraph({
+  spacing: { after: line ? 60 : 100 },
+  children: [new TextRun({ text: line || " ", font: "Arial", size: 16, bold: /^(Мақсаты:|Дескриптор:|БАРЛЫҒЫ:)/.test(line) })],
+}));
+
+async function exportWorksheet(material: Material) {
+  const content = material.content;
+  const levelCells = [
+    ["A ДЕҢГЕЙІ — БІЛУ ЖӘНЕ ТҮСІНУ", "levelA", "D1FAE5", "047857", "3 БАЛЛ"],
+    ["B ДЕҢГЕЙІ — ҚОЛДАНУ", "levelB", "DBEAFE", "1D4ED8", "3 БАЛЛ"],
+    ["C ДЕҢГЕЙІ — ТАЛДАУ ЖӘНЕ БАҒАЛАУ", "levelC", "EDE9FE", "7C3AED", "4 БАЛЛ"],
+  ];
+  const children: (Paragraph | Table)[] = [
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: "ABC ДЕҢГЕЙЛІК ЖҰМЫС", bold: true, size: 30, color: "1D4ED8", font: "Arial" })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 70 }, children: [new TextRun({ text: `${material.grade}-сынып · Тақырыбы: ${String(content.topic)}`, bold: true, size: 20, font: "Arial" })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 60 }, children: [new TextRun({ text: String(content.instruction), italics: true, size: 17, font: "Arial" })] }),
+    new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: `Оқу мақсаты: ${String(content.learningGoal)}`, bold: true, size: 17, font: "Arial" })] }),
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      columnWidths: [3400, 3400, 3400],
+      rows: [
+        new TableRow({ tableHeader: true, children: levelCells.map(([title, , , color, score]) => new TableCell({ shading: { fill: color }, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `${title}  •  ${score}`, bold: true, color: "FFFFFF", size: 18, font: "Arial" })] })] })) }),
+        new TableRow({ children: levelCells.map(([, key, fill]) => new TableCell({ shading: { fill }, verticalAlign: VerticalAlign.TOP, margins: { top: 120, bottom: 120, left: 140, right: 140 }, children: worksheetParagraphs(String(content[key])) })) }),
+      ],
+    }),
+    new Paragraph({ spacing: { before: 120 }, shading: { fill: "FEF3C7" }, children: [new TextRun({ text: `Есіңізде болсын! ${String(content.reminder)}`, bold: true, size: 16, font: "Arial" }), new TextRun({ text: "     ЖАЛПЫ: 10 БАЛЛ", bold: true, color: "B45309", size: 18, font: "Arial" })] }),
+  ];
+  const document = new Document({ sections: [{
+    properties: { page: { size: { orientation: PageOrientation.LANDSCAPE }, margin: { top: 500, right: 500, bottom: 500, left: 500 } } },
+    children,
+  }] });
+  const blob = await Packer.toBlob(document);
+  const url = URL.createObjectURL(blob);
+  const link = createDownloadLink();
+  link.href = url;
+  link.download = `${material.title.replace(/[<>:"/\\|?*]/g, "-")}.docx`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+const createDownloadLink = () => window.document.createElement("a");
 
 export async function exportMaterial(material: Material) {
   if (material.type === "ҚМЖ" && "lessonNumber" in material.content) {
@@ -24,6 +66,7 @@ export async function exportMaterial(material: Material) {
     };
     return exportLessonPlanDocx(plan);
   }
+  if (material.type === "Жұмыс парағы" && "levelA" in material.content) return exportWorksheet(material);
 
   const content = material.content;
   const children: (Paragraph | Table)[] = [

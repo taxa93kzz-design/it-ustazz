@@ -6,6 +6,9 @@ export type UserRole = "admin" | "teacher";
 export interface CurrentProfile {
   id: string; email: string; username: string; full_name: string; school_name: string;
   role: UserRole; is_active: boolean; must_change_password: boolean;
+  subscription_status?: "trial" | "active" | "expired";
+  trial_generations_used?: number;
+  subscription_expires_at?: string | null;
 }
 
 export async function getCurrentProfile(): Promise<CurrentProfile | null> {

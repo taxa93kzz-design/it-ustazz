@@ -2,12 +2,17 @@ import { NextResponse } from "next/server";
 import { aiLessonInputSchema, aiLessonOutputSchema } from "@/lib/ai-schemas";
 import { aiApiError } from "@/lib/server/api-error";
 import { generateStructured } from "@/lib/server/gemini";
-import { hasActiveSession } from "@/lib/auth";
+import { getCurrentProfile } from "@/lib/auth";
+import { claimAiGeneration, refundAiGeneration, subscriptionRequiredResponse } from "@/lib/subscription";
 
 export async function POST(request: Request) {
-  if (!await hasActiveSession()) return NextResponse.json({ message: "Сессия мерзімі аяқталған" }, { status: 401 });
+  const profile = await getCurrentProfile();
+  if (!profile?.is_active) return NextResponse.json({ error: "Сессия мерзімі аяқталған" }, { status: 401 });
+  let claim: Awaited<ReturnType<typeof claimAiGeneration>> | null = null;
   try {
     const input = aiLessonInputSchema.parse(await request.json());
+    claim = await claimAiGeneration();
+    if (!claim.allowed) return NextResponse.json(subscriptionRequiredResponse(), { status: 402 });
     const result = await generateStructured(
       `Сен Қазақстандағы информатика мұғаліміне көмектесетін әдіскерсің.
 Тек қазақ тілінде JSON қайтар. ${input.grade}-сыныпқа арналған «${input.topic}» сабағын құрастыр.
@@ -22,8 +27,9 @@ export async function POST(request: Request) {
 JSON пішімі: {"stages":[{"stage":"...","teacherActivity":"...","studentActivity":"...","assessment":"...","resources":"..."}]}`,
       aiLessonOutputSchema,
     );
-    return NextResponse.json(result);
+    return NextResponse.json(result, { headers: { "X-AI-Remaining": String(claim.remaining) } });
   } catch (error) {
+    try { await refundAiGeneration(profile.id, Boolean(claim?.charged)); } catch { /* Негізгі қатені сақтаймыз. */ }
     return aiApiError(error);
   }
 }

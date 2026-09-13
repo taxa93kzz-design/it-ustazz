@@ -53,7 +53,9 @@ npm run dev
 ## Supabase авторизациясын баптау
 
 1. Supabase жобасын ашып, SQL Editor ішінде
-   `supabase/migrations/001_auth_and_profiles.sql` файлын орындаңыз.
+   `supabase/migrations/001_auth_and_profiles.sql`, содан кейін
+   `supabase/migrations/002_ai_subscriptions.sql` файлдарын ретімен орындаңыз.
+   Екінші көшіру әр мұғалімге 2 тегін AI генерация және жазылым күйін қосады.
 2. `.env.example` файлын `.env.local` ретінде көшіріңіз. Жаңа Supabase
    жобасында `NEXT_PUBLIC_SUPABASE_URL`,
    `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` және

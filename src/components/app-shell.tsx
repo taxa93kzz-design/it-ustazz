@@ -10,7 +10,6 @@ import {
   Home,
   Library,
   Menu,
-  PanelLeftClose,
   Sparkles,
   LogOut,
   ShieldCheck,
@@ -21,6 +20,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { CurrentProfile } from "@/lib/auth";
 import { ChatBot } from "@/components/chat/ChatBot";
+import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
 
 const links = [
   { href: "/", label: "Басты бет", icon: Home },
@@ -85,11 +85,7 @@ export function AppShell({ children, profile }: { children: React.ReactNode; pro
           })}
           {profile?.role === "admin" && <Link href="/admin/users" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"><ShieldCheck className="size-5" /> Қолданушылар</Link>}
         </nav>
-        <div className="m-4 rounded-2xl bg-slate-950 p-4 text-white">
-          <PanelLeftClose className="mb-3 size-5 text-blue-300" />
-          <p className="text-sm font-semibold">Уақытыңызды үнемдеңіз</p>
-          <p className="mt-1 text-xs leading-5 text-slate-300">Материалдарды бірнеше минутта дайындаңыз.</p>
-        </div>
+        {profile && <SubscriptionCard role={profile.role} status={profile.subscription_status} used={profile.trial_generations_used} expiresAt={profile.subscription_expires_at} />}
       </aside>
       <div className="lg:pl-72">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-7 lg:px-10">
